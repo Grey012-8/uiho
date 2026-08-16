@@ -1,0 +1,612 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Mauricio García Roche — Editor de Video</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:ital,wght@0,400;0,500;1,400&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#232326;
+    --bg-alt:#2d2d31;
+    --text:#e9e7e2;
+    --text-dim:#a6a29b;
+    --accent:#b8874a;
+    --accent-dim:#6b4f2a;
+    --line:#3a3a3f;
+    --card:#28282c;
+  }
+  *{margin:0;padding:0;box-sizing:border-box;}
+  html{scroll-behavior:smooth;}
+  body{
+    background:var(--bg);
+    color:var(--text);
+    font-family:'Inter', sans-serif;
+    line-height:1.6;
+    overflow-x:hidden;
+  }
+  ::selection{background:var(--accent);color:var(--bg);}
+
+  a{color:inherit;}
+
+  .label{
+    font-family:'JetBrains Mono', monospace;
+    font-size:0.72rem;
+    letter-spacing:0.22em;
+    text-transform:uppercase;
+    color:var(--accent);
+  }
+
+  h1,h2,h3{
+    font-family:'Space Grotesk', sans-serif;
+    font-weight:600;
+    letter-spacing:-0.01em;
+  }
+
+  /* ---------- Nav ---------- */
+  nav{
+    position:fixed;
+    top:0;left:0;right:0;
+    z-index:50;
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    padding:1.4rem clamp(1.2rem,5vw,3.5rem);
+    background:linear-gradient(to bottom, rgba(11,11,13,0.9), transparent);
+    backdrop-filter:blur(2px);
+  }
+  .nav-mark{
+    display:flex;align-items:center;gap:0.6rem;
+    font-family:'JetBrains Mono', monospace;
+    font-size:0.78rem;
+    letter-spacing:0.15em;
+    text-transform:uppercase;
+  }
+  .nav-mark img{width:22px;height:22px;filter:invert(1);opacity:0.95;}
+  .nav-links{display:flex;gap:clamp(1rem,3vw,2.2rem);font-family:'JetBrains Mono',monospace;font-size:0.75rem;letter-spacing:0.1em;text-transform:uppercase;}
+  .nav-links a{text-decoration:none;color:var(--text-dim);}
+  @media (max-width:640px){ .nav-links{display:none;} }
+
+  /* ---------- Hero ---------- */
+  .hero{
+    min-height:100svh;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    justify-content:center;
+    text-align:center;
+    position:relative;
+    padding:6rem 1.5rem 4rem;
+    overflow:hidden;
+  }
+  .hero-canvas{
+    position:absolute;
+    inset:0;
+    width:100%;
+    height:100%;
+    z-index:0;
+  }
+  .hero-content{
+    position:relative;
+    z-index:1;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+  }
+  .hero-logo-wrap{
+    position:relative;
+    width:clamp(170px,26vw,270px);
+    height:clamp(170px,26vw,270px);
+    margin-bottom:2.2rem;
+  }
+  .hero-logo-wrap img{
+    width:100%;height:100%;
+    object-fit:contain;
+    animation:blink 6s ease-in-out infinite;
+    filter:drop-shadow(0 0 28px rgba(184,135,74,0.25));
+  }
+  @keyframes blink{
+    0%,88%,100%{transform:scaleY(1);}
+    92%{transform:scaleY(0.06);}
+    96%{transform:scaleY(1);}
+  }
+  @media (prefers-reduced-motion:reduce){
+    .hero-logo-wrap img{animation:none;}
+  }
+  .hero h1{
+    font-size:clamp(2.4rem,7vw,4.6rem);
+    line-height:1.02;
+    margin-bottom:1rem;
+  }
+  .hero h1 .edit{color:var(--text-dim);}
+  .hero p.tagline{
+    font-family:'Inter',sans-serif;
+    font-style:italic;
+    font-size:clamp(1.05rem,2vw,1.35rem);
+    color:var(--text-dim);
+    max-width:36rem;
+  }
+  .scroll-cue{
+    position:absolute;
+    bottom:2.2rem;
+    left:50%;
+    transform:translateX(-50%);
+    font-family:'JetBrains Mono',monospace;
+    font-size:0.68rem;
+    letter-spacing:0.2em;
+    text-transform:uppercase;
+    color:var(--text-dim);
+    display:flex;flex-direction:column;align-items:center;gap:0.5rem;
+  }
+  .scroll-cue .stem{width:1px;height:32px;background:linear-gradient(var(--accent),transparent);}
+
+  /* ---------- Divider (eye motif) ---------- */
+  .divider{
+    display:flex;align-items:center;justify-content:center;
+    gap:1rem;
+    padding:3.2rem 1.5rem;
+    color:var(--accent-dim);
+  }
+  .divider .line{height:1px;flex:1;max-width:180px;background:var(--line);}
+  .divider svg{width:26px;height:14px;flex-shrink:0;}
+
+  /* ---------- Section shell ---------- */
+  section{
+    padding:5.5rem clamp(1.4rem,6vw,5rem);
+    max-width:1180px;
+    margin:0 auto;
+  }
+  .section-head{
+    margin-bottom:3rem;
+    max-width:40rem;
+  }
+  .section-head h2{
+    font-size:clamp(1.9rem,4vw,2.8rem);
+    margin-top:0.6rem;
+  }
+
+  /* ---------- Sobre mí ---------- */
+  .traits{
+    display:grid;
+    grid-template-columns:repeat(auto-fit,minmax(230px,1fr));
+    gap:1px;
+    background:var(--line);
+    border:1px solid var(--line);
+  }
+  .trait{
+    background:var(--bg);
+    padding:2.1rem 1.8rem;
+  }
+  .trait .num{
+    font-family:'JetBrains Mono',monospace;
+    font-size:0.7rem;
+    color:var(--accent);
+    display:block;
+    margin-bottom:0.9rem;
+  }
+  .trait h3{
+    font-size:1.08rem;
+    margin-bottom:0.6rem;
+    font-weight:600;
+  }
+  .trait p{
+    font-size:0.95rem;
+    color:var(--text-dim);
+  }
+
+  /* ---------- Habilidades ---------- */
+  .skills-row{
+    display:flex;
+    flex-wrap:wrap;
+    gap:0.7rem;
+  }
+  .pill{
+    font-family:'JetBrains Mono',monospace;
+    font-size:0.78rem;
+    letter-spacing:0.03em;
+    border:1px solid var(--line);
+    border-radius:999px;
+    padding:0.55rem 1.15rem;
+    color:var(--text-dim);
+  }
+  .pill.accent{border-color:var(--accent-dim);color:var(--accent);}
+  .pill.ghost{
+    border-style:dashed;
+    border-color:var(--line);
+    color:var(--text-dim);
+    opacity:0.55;
+  }
+
+  /* ---------- Proyectos ---------- */
+  .grid-projects{
+    display:grid;
+    grid-template-columns:repeat(auto-fit,minmax(260px,1fr));
+    gap:1.4rem;
+  }
+  .project-card{
+  aspect-ratio:4/3;
+  position:relative;
+  border:1px solid var(--line);
+  border-radius:6px;
+  display:block;
+  color:var(--text-dim);
+  overflow:hidden;
+  cursor:pointer;
+  background:var(--card);
+}
+
+.project-card img{
+  width:100%;
+  height:100%;
+  object-fit:cover;
+  display:block;
+}
+
+.project-card .plus{
+  font-family:'Space Grotesk',sans-serif;
+  font-size:1.8rem;
+  color:var(--accent-dim);
+}
+
+.project-card span.small{
+  position:absolute;
+  left:0;
+  right:0;
+  bottom:0;
+  padding:0.6rem 0.9rem;
+  font-family:'JetBrains Mono',monospace;
+  font-size:0.68rem;
+  letter-spacing:0.1em;
+  text-transform:uppercase;
+  color:var(--text);
+  background:linear-gradient(to top, rgba(0,0,0,0.75), transparent);
+}
+
+  /* ---------- Contacto ---------- */
+  .contact{
+    background:var(--bg-alt);
+    border-top:1px solid var(--line);
+  }
+  .contact-grid{
+    display:grid;
+    grid-template-columns:1.3fr 1fr;
+    gap:3rem;
+    align-items:start;
+  }
+  @media (max-width:760px){ .contact-grid{grid-template-columns:1fr;} }
+  .contact h2{font-size:clamp(1.9rem,4vw,2.6rem);margin-bottom:1rem;}
+  .contact p{color:var(--text-dim);max-width:30rem;}
+  .contact-links{display:flex;flex-direction:column;gap:0.9rem;margin-top:1rem;}
+  .contact-links a{
+    font-family:'JetBrains Mono',monospace;
+    font-size:0.85rem;
+    text-decoration:none;
+    color:var(--text);
+    border-bottom:1px solid var(--line);
+    padding-bottom:0.9rem;
+    display:flex;
+    justify-content:space-between;
+    align-items:baseline;
+    gap:1rem;
+  }
+  .contact-links a .arrow{flex-shrink:0;color:var(--accent-dim);}
+
+  .placeholder-note{
+    font-family:'JetBrains Mono',monospace;
+    font-size:0.68rem;
+    letter-spacing:0.05em;
+    color:var(--text-dim);
+    opacity:0.6;
+    margin-top:0.6rem;
+  }
+
+  /* ---------- Lightbox ---------- */
+  .lightbox{
+    position:fixed;
+    inset:0;
+    z-index:100;
+    background:rgba(15,15,17,0.92);
+    display:none;
+    align-items:center;
+    justify-content:center;
+    padding:2rem;
+    cursor:zoom-out;
+  }
+  .lightbox.open{display:flex;}
+  .lightbox img{
+    max-width:min(90vw,900px);
+    max-height:85vh;
+    object-fit:contain;
+    border-radius:4px;
+    box-shadow:0 20px 60px rgba(0,0,0,0.5);
+  }
+  .lightbox-close{
+    position:absolute;
+    top:1.4rem;
+    right:clamp(1.2rem,5vw,3.5rem);
+    font-family:'JetBrains Mono',monospace;
+    font-size:0.75rem;
+    letter-spacing:0.15em;
+    text-transform:uppercase;
+    color:var(--text-dim);
+    background:none;
+    border:1px solid var(--line);
+    border-radius:999px;
+    padding:0.5rem 1rem;
+    cursor:pointer;
+  }
+
+  footer{
+    text-align:center;
+    padding:2.4rem 1.5rem 3rem;
+    font-family:'JetBrains Mono',monospace;
+    font-size:0.7rem;
+    letter-spacing:0.1em;
+    color:var(--text-dim);
+    opacity:0.6;
+  }
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="nav-mark">
+    <img src="assets/logo.jpeg" alt="Marca personal">
+    <span>Mauricio García Roche</span>
+  </div>
+  <div class="nav-links">
+    <a href="#proyectos">Proyectos</a>
+    <a href="#sobre-mi">Sobre mí</a>
+    <a href="#contacto">Contacto</a>
+  </div>
+</nav>
+
+<!-- ============ HERO ============ -->
+<section class="hero" style="max-width:none;">
+  <canvas class="hero-canvas" id="heroCanvas"></canvas>
+  <div class="hero-content">
+    <div class="hero-logo-wrap">
+      <img src="assets/logo.jpeg" alt="Logo personal — ojo geométrico">
+    </div>
+    <h1 style="margin-top:0.8rem;">Mauricio García Roche</h1>
+    <p class="tagline">Editor de video de Kdenlive</p>
+  </div>
+  <div class="scroll-cue"><div class="stem"></div>SCROLL</div>
+</section>
+
+<div class="divider">
+  <div class="line"></div>
+  <svg viewBox="0 0 26 14" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <path d="M1 7 C7 1, 19 1, 25 7 C19 13, 7 13, 1 7Z" stroke="currentColor" stroke-width="1"/>
+    <circle cx="13" cy="7" r="2.6" stroke="currentColor" stroke-width="1"/>
+  </svg>
+  <div class="line"></div>
+</div>
+
+<!-- ============ PROYECTOS ============ -->
+<section id="proyectos">
+  <div class="section-head">
+    <span class="label">Proyectos</span>
+    <h2>Trabajo reciente</h2>
+  </div>
+
+  <!-- Espacio vacío: reemplaza cada tarjeta por tu proyecto (miniatura, título, enlace) cuando lo tengas listo -->
+  <div class="grid-projects">
+
+  <div class="project-card" onclick="openLightbox('assets/evidencia1.jpg')">
+    <img src="assets/evidencia1.jpg" alt="Proyecto 1">
+    <span class="small">Editando</span>
+  </div>
+
+  <div class="project-card" onclick="openLightbox('assets/evidencia2.jpg')">
+    <img src="assets/evidencia2.jpg" alt="Proyecto 2">
+    <span class="small">Comunicación</span>
+  </div>
+
+  <div class="project-card" onclick="openLightbox('assets/evidencia3.jpg')">
+    <img src="assets/evidencia3.jpg" alt="Proyecto 3">
+    <span class="small">Mi logo</span>
+  </div>
+
+</div>
+  
+</section>
+
+<div class="divider">
+  <div class="line"></div>
+  <svg viewBox="0 0 26 14" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <path d="M1 7 C7 1, 19 1, 25 7 C19 13, 7 13, 1 7Z" stroke="currentColor" stroke-width="1"/>
+    <circle cx="13" cy="7" r="2.6" stroke="currentColor" stroke-width="1"/>
+  </svg>
+  <div class="line"></div>
+</div>
+
+<!-- ============ SOBRE MÍ ============ -->
+<section id="sobre-mi">
+  <div class="section-head">
+    <span class="label">Sobre mí</span>
+    <h2>Cómo trabajo</h2>
+  </div>
+
+  <div class="traits">
+    <div class="trait">
+      <span class="num">01</span>
+      <h3>Edición en Kdenlive</h3>
+      <p>Edito de forma decente y constante en Kdenlive, resolviendo los problemas técnicos que van saliendo en el camino en lugar de bloquearme con ellos.</p>
+    </div>
+    <div class="trait">
+      <span class="num">02</span>
+      <h3>Adaptabilidad</h3>
+      <p>Trato de adaptarme a los problemas que surgen y resolverlos, en vez de esperar que todo salga perfecto desde el principio.</p>
+    </div>
+    <div class="trait">
+      <span class="num">03</span>
+      <h3>Movimiento</h3>
+      <p>Me gusta moverme: no me quedo quieto en un solo lugar ni en una sola forma de hacer las cosas.</p>
+    </div>
+    <div class="trait">
+      <span class="num">04</span>
+      <h3>Carisma</h3>
+      <p>Soy carismático, y eso se nota tanto en cómo me comunico como en cómo trabajo con otras personas.</p>
+    </div>
+    <div class="trait">
+      <span class="num">05</span>
+      <h3>Marca personal</h3>
+      <p>Tengo mi propio logo, el que ves arriba, y lo uso como marca personal en todo lo que hago.</p>
+    </div>
+    <div class="trait">
+      <span class="num">06</span>
+      <h3>Elijo con cuidado</h3>
+      <p>Elijo con cuidado a las personas con las que trabajo y colaboro — eso me permite mantener la calidad y la confianza en cada proyecto.</p>
+    </div>
+  
+    </div>
+  </div>
+</section>
+
+<div class="divider">
+  <div class="line"></div>
+  <svg viewBox="0 0 26 14" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <path d="M1 7 C7 1, 19 1, 25 7 C19 13, 7 13, 1 7Z" stroke="currentColor" stroke-width="1"/>
+    <circle cx="13" cy="7" r="2.6" stroke="currentColor" stroke-width="1"/>
+  </svg>
+  <div class="line"></div>
+</div>
+
+<!-- ============ CONTACTO ============ -->
+<section id="contacto" class="contact" style="max-width:none;">
+  <div class="contact-grid" style="max-width:1180px;margin:0 auto;padding:0;">
+    <div>
+      <span class="label">Contacto</span>
+      <h2>Trabajemos juntos</h2>
+      <p>Elijo con cuidado cada colaboración. Si tu proyecto encaja, escríbeme y lo hablamos.</p>
+    </div>
+    <div class="contact-links">
+      <a href="mailto:garciarochemauricio@gmail.com">garciarochemauricio@gmail.com <span class="arrow">→</span></a>
+      <a href="https://instagram.com/grey_mr8" target="_blank" rel="noopener">Instagram · @grey_mr8 <span class="arrow">→</span></a>
+      <a href="https://wa.me/529934369489" target="_blank" rel="noopener">WhatsApp · +52 993 436 9489 <span class="arrow">→</span></a>
+      <!-- Espacio vacío: agrega otra red o forma de contacto aquí -->
+
+    </div>
+  </div>
+</section>
+
+<footer>Mauricio García Roche </footer>
+
+<!-- ============ LIGHTBOX (ver imagen en grande) ============ -->
+<div class="lightbox" id="lightbox" onclick="closeLightbox()">
+  <button class="lightbox-close" onclick="closeLightbox()">Cerrar ✕</button>
+  <img id="lightbox-img" src="" alt="Vista ampliada">
+</div>
+
+<script>
+  function openLightbox(src){
+    document.getElementById('lightbox-img').src = src;
+    document.getElementById('lightbox').classList.add('open');
+  }
+  function closeLightbox(){
+    document.getElementById('lightbox').classList.remove('open');
+  }
+  document.addEventListener('keydown', function(e){
+    if(e.key === 'Escape') closeLightbox();
+  });
+
+  // ---------- Fondo interactivo del hero ----------
+  (function(){
+    const canvas = document.getElementById('heroCanvas');
+    const hero = document.querySelector('.hero');
+    if(!canvas || !hero) return;
+    const ctx = canvas.getContext('2d');
+    const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+    let w, h, dots = [];
+    const spacing = 36;
+    const radius = 150;
+    const strength = 16;
+    let mouse = { x:-9999, y:-9999 };
+    let dpr = Math.min(window.devicePixelRatio || 1, 2);
+
+    function buildDots(){
+      dots = [];
+      for(let y = spacing/2; y < h; y += spacing){
+        for(let x = spacing/2; x < w; x += spacing){
+          dots.push({ ox:x, oy:y, x:x, y:y });
+        }
+      }
+    }
+
+    function resize(){
+      w = hero.offsetWidth;
+      h = hero.offsetHeight;
+      canvas.width = w * dpr;
+      canvas.height = h * dpr;
+      canvas.style.width = w + 'px';
+      canvas.style.height = h + 'px';
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      buildDots();
+    }
+
+    function frame(){
+      draw();
+      requestAnimationFrame(frame);
+    }
+
+    function draw(){
+      ctx.clearRect(0, 0, w, h);
+      for(const d of dots){
+        const dx = mouse.x - d.ox;
+        const dy = mouse.y - d.oy;
+        const dist = Math.sqrt(dx*dx + dy*dy);
+        let tx = d.ox, ty = d.oy;
+        if(dist < radius){
+          const force = (1 - dist / radius);
+          const angle = Math.atan2(dy, dx);
+          tx = d.ox - Math.cos(angle) * force * strength;
+          ty = d.oy - Math.sin(angle) * force * strength;
+        }
+        d.x += (tx - d.x) * 0.12;
+        d.y += (ty - d.y) * 0.12;
+
+        const distNow = Math.sqrt((mouse.x-d.x)**2 + (mouse.y-d.y)**2);
+        const glow = distNow < radius ? (1 - distNow/radius) : 0;
+        const opacity = 0.16 + glow * 0.55;
+        const size = 1.3 + glow * 1.6;
+
+        ctx.beginPath();
+        ctx.fillStyle = `rgba(184,135,74,${opacity})`;
+        ctx.arc(d.x, d.y, size, 0, Math.PI*2);
+        ctx.fill();
+      }
+    }
+
+    hero.addEventListener('mousemove', function(e){
+      const rect = hero.getBoundingClientRect();
+      mouse.x = e.clientX - rect.left;
+      mouse.y = e.clientY - rect.top;
+    });
+    hero.addEventListener('mouseleave', function(){
+      mouse.x = -9999;
+      mouse.y = -9999;
+    });
+    hero.addEventListener('touchmove', function(e){
+      if(!e.touches.length) return;
+      const rect = hero.getBoundingClientRect();
+      mouse.x = e.touches[0].clientX - rect.left;
+      mouse.y = e.touches[0].clientY - rect.top;
+    }, { passive:true });
+
+    window.addEventListener('resize', resize);
+    resize();
+
+    if(!reduceMotion){
+      requestAnimationFrame(frame);
+    } else {
+      draw(); // dibuja una sola vez, sin animación continua
+    }
+  })();
+</script>
+
+</body>
+</html>
